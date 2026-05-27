@@ -1,4 +1,4 @@
-"""Pytest fixtures for ModelCompass."""
+﻿"""Pytest fixtures for ModelCompass."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ def flask_app():
             "TESTING": True,
             "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
             "MODEL_TIMEOUT_SECONDS": 2,
-            "MAX_INPUT_WORDS": 256,
+            "MAX_INPUT_TOKENS": 256,
         }
     )
     return app

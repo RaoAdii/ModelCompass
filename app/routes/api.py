@@ -65,7 +65,7 @@ def summarize_document() -> Any:
     normalized_text = clean_text(raw_text)
     truncated_text = truncate_text(
         normalized_text,
-        max_words=current_app.config["MAX_INPUT_WORDS"],
+        max_words=current_app.config["MAX_INPUT_TOKENS"],
     )
 
     detected_doc_type = requested_doc_type or detect_document_type(truncated_text)

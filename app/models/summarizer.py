@@ -89,7 +89,7 @@ class MultiModelSummarizer:
             input_text,
             return_tensors="pt",
             truncation=True,
-            max_length=current_app.config["MAX_INPUT_WORDS"],
+            max_length=current_app.config["MAX_INPUT_TOKENS"],
         )
         generated = model.generate(
             **inputs,

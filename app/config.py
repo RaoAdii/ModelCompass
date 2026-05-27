@@ -20,7 +20,9 @@ class Config:
     MAX_FILE_SIZE_MB: int = int(os.getenv("MAX_FILE_SIZE_MB", "10"))
     MAX_CONTENT_LENGTH: int = MAX_FILE_SIZE_MB * 1024 * 1024
     MODEL_TIMEOUT_SECONDS: int = int(os.getenv("MODEL_TIMEOUT_SECONDS", "60"))
-    MAX_INPUT_WORDS: int = int(os.getenv("MAX_INPUT_WORDS", "1024"))
+    MAX_INPUT_TOKENS: int = int(
+        os.getenv("MAX_INPUT_TOKENS", os.getenv("MAX_INPUT_WORDS", "1024"))
+    )
 
     BART_MODEL_NAME: str = os.getenv("BART_MODEL_NAME", "facebook/bart-large-cnn")
     PEGASUS_MODEL_NAME: str = os.getenv("PEGASUS_MODEL_NAME", "google/pegasus-xsum")
