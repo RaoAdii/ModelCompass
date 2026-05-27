@@ -6,7 +6,8 @@ import time
 
 import pytest
 
-from app.models.summarizer import MultiModelSummarizer, SummaryTimeoutError
+from app.exceptions import SummaryTimeoutError
+from app.models.summarizer import MultiModelSummarizer
 
 
 def test_generate_summaries_with_stubbed_models(flask_app, monkeypatch) -> None:

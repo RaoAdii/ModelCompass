@@ -10,13 +10,12 @@ from time import monotonic
 from typing import Any, Dict, Tuple
 
 from flask import current_app
+import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
+from app.exceptions import SummaryTimeoutError
+
 LOGGER = logging.getLogger(__name__)
-
-
-class SummaryTimeoutError(TimeoutError):
-    """Raised when summarization exceeds allowed timeout."""
 
 
 @dataclass
@@ -102,8 +101,19 @@ class MultiModelSummarizer:
         output = tokenizer.decode(generated[0], skip_special_tokens=True).strip()
         return output
 
-    def generate_summaries(self, text: str, timeout_seconds: int) -> Dict[str, str]:
-        """Generate summaries from all configured models concurrently.
+    def should_use_parallel(self) -> bool:
+        """Decide whether summary generation should run in parallel.
+
+        Returns:
+            True when configured to use parallel mode in the current device context.
+        """
+        is_gpu = torch.cuda.is_available()
+        if is_gpu:
+            return bool(current_app.config["USE_PARALLEL_ON_GPU"])
+        return bool(current_app.config["USE_PARALLEL_ON_CPU"])
+
+    def _generate_parallel(self, text: str, timeout_seconds: int) -> Dict[str, str]:
+        """Generate summaries in parallel.
 
         Args:
             text: Source text to summarize.
@@ -152,6 +162,65 @@ class MultiModelSummarizer:
 
         LOGGER.info("All summaries generated in %.2fs", elapsed)
         return summaries
+
+    def _generate_sequential(self, text: str, timeout_seconds: int) -> Dict[str, str]:
+        """Generate summaries sequentially.
+
+        Args:
+            text: Source text to summarize.
+            timeout_seconds: Maximum total time across all models.
+
+        Returns:
+            Mapping with summary_bart, summary_pegasus, summary_t5.
+
+        Raises:
+            SummaryTimeoutError: If total time exceeds timeout.
+        """
+        model_keys = tuple(self._model_config().keys())
+        summaries: Dict[str, str] = {}
+        start_time = monotonic()
+
+        LOGGER.info("Starting sequential summary generation")
+        for model_key in model_keys:
+            elapsed = monotonic() - start_time
+            if elapsed > timeout_seconds:
+                raise SummaryTimeoutError(
+                    f"Model summarization timed out after {elapsed:.1f}s. "
+                    "Please try a shorter document."
+                )
+            summaries[model_key] = self._generate_with_model(model_key, text)
+            LOGGER.info("Completed summary for %s", model_key)
+
+        elapsed = monotonic() - start_time
+        if elapsed > timeout_seconds:
+            raise SummaryTimeoutError(
+                f"Model summarization timed out after {elapsed:.1f}s. "
+                "Please try a shorter document."
+            )
+
+        LOGGER.info("All summaries generated in %.2fs", elapsed)
+        return summaries
+
+    def generate_summaries(
+        self,
+        text: str,
+        timeout_seconds: int,
+        use_parallel: bool = False,
+    ) -> Dict[str, str]:
+        """Generate summaries with CPU/GPU-aware execution mode.
+
+        Args:
+            text: Source text to summarize.
+            timeout_seconds: Maximum total time for all models.
+            use_parallel: False for CPU-oriented sequential execution,
+                True for GPU-oriented parallel execution.
+
+        Returns:
+            Mapping with summary_bart, summary_pegasus, summary_t5.
+        """
+        if use_parallel:
+            return self._generate_parallel(text=text, timeout_seconds=timeout_seconds)
+        return self._generate_sequential(text=text, timeout_seconds=timeout_seconds)
 
     @staticmethod
     def choose_routed_model(document_type: str) -> Tuple[str, str]:

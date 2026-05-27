@@ -6,7 +6,7 @@ import io
 
 import fitz
 
-from app.models.summarizer import SummaryTimeoutError
+from app.exceptions import SummaryTimeoutError
 
 
 def _build_pdf_bytes(text: str) -> bytes:
@@ -38,7 +38,11 @@ def test_health_endpoint(client) -> None:
 def test_summarize_txt_success(client, monkeypatch) -> None:
     """Summarize TXT upload and return summaries + evaluation."""
 
-    def fake_generate_summaries(text: str, timeout_seconds: int):
+    def fake_generate_summaries(
+        text: str,
+        timeout_seconds: int,
+        use_parallel: bool = False,
+    ):
         return {
             "summary_bart": "bart summary",
             "summary_pegasus": "pegasus summary",
@@ -72,7 +76,7 @@ def test_summarize_pdf_success(client, monkeypatch) -> None:
 
     monkeypatch.setattr(
         "app.routes.api.summarizer.generate_summaries",
-        lambda text, timeout_seconds: {
+        lambda text, timeout_seconds, use_parallel=False: {
             "summary_bart": "bart pdf",
             "summary_pegasus": "pegasus pdf",
             "summary_t5": "t5 pdf",
@@ -108,7 +112,7 @@ def test_invalid_file_extension(client) -> None:
 def test_model_timeout_error_handling(client, monkeypatch) -> None:
     """Return 504 when model generation exceeds timeout."""
 
-    def _raise_timeout(text: str, timeout_seconds: int):
+    def _raise_timeout(text: str, timeout_seconds: int, use_parallel: bool = False):
         raise SummaryTimeoutError("Model summarization timed out after 60.0s.")
 
     monkeypatch.setattr("app.routes.api.summarizer.generate_summaries", _raise_timeout)

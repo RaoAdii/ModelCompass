@@ -48,7 +48,11 @@ ModelCompass/
   - `facebook/bart-large-cnn`
   - `google/pegasus-xsum`
   - `t5-small`
-- Parallel summary generation with 60s timeout budget
+- CPU/GPU-aware execution mode:
+  - CPU default: sequential (`BART -> Pegasus -> T5`)
+  - GPU default: parallel (`ThreadPoolExecutor`)
+  - configurable with `USE_PARALLEL_ON_CPU` and `USE_PARALLEL_ON_GPU`
+- 60s timeout budget with `504` timeout response mapping
 - Pairwise ROUGE evaluation (`ROUGE-1`, `ROUGE-2`, `ROUGE-L`)
 - Custom metrics (word count, compression ratio)
 - React UI with:
@@ -91,6 +95,18 @@ Health check:
 ```bash
 curl http://localhost:5000/api/health
 ```
+
+### Concurrency Mode
+
+Set execution mode in `.env`:
+
+```bash
+USE_PARALLEL_ON_CPU=false
+USE_PARALLEL_ON_GPU=true
+```
+
+- Use sequential mode on CPU for better stability/perf with large models.
+- Use parallel mode on GPU for better throughput.
 
 ## API Contracts
 
@@ -157,6 +173,12 @@ npm install
 set VITE_API_BASE_URL=http://localhost:5000
 ```
 
+Or set in `frontend/.env.local`:
+
+```bash
+VITE_API_BASE_URL=http://localhost:5000
+```
+
 3. Run frontend:
 
 ```bash
@@ -179,6 +201,25 @@ Included test coverage:
 - timeout behavior (`504`)
 - evaluator sanity checks (`ROUGE > 0.1`)
 - summarizer parallel/timeout behavior
+
+Run verbose test mode:
+
+```bash
+python -m pytest tests/ -v --tb=short
+```
+
+## Timeout and Performance Notes
+
+- API timeout is controlled by `MODEL_TIMEOUT_SECONDS` (default `60`).
+- If timeout is reached, API returns HTTP `504` with a user-friendly error.
+- CPU timing and GPU timing should be measured in your target deployment environment because throughput varies by hardware.
+
+Suggested benchmark process:
+
+1. Run once with `USE_PARALLEL_ON_CPU=false` on CPU-only machine.
+2. Run once with GPU available and `USE_PARALLEL_ON_GPU=true`.
+3. Record end-to-end latency for the same test document.
+4. Keep timeout margin at least 2x observed p95 latency.
 
 ## Notes
 

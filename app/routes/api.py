@@ -74,6 +74,7 @@ def summarize_document() -> Any:
     summaries = summarizer.generate_summaries(
         text=truncated_text,
         timeout_seconds=current_app.config["MODEL_TIMEOUT_SECONDS"],
+        use_parallel=summarizer.should_use_parallel(),
     )
     evaluation = evaluator.evaluate_summaries(
         source_text=truncated_text,
