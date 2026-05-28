@@ -32,3 +32,4 @@ class Config:
     SUMMARY_MIN_LENGTH: int = int(os.getenv("SUMMARY_MIN_LENGTH", "60"))
     USE_PARALLEL_ON_CPU: bool = os.getenv("USE_PARALLEL_ON_CPU", "false").lower() == "true"
     USE_PARALLEL_ON_GPU: bool = os.getenv("USE_PARALLEL_ON_GPU", "true").lower() == "true"
+    DB_PATH: str = os.getenv("DB_PATH", "app/db/cache.db")

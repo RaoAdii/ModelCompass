@@ -201,12 +201,9 @@ class MultiModelSummarizer:
         LOGGER.info("All summaries generated in %.2fs", elapsed)
         return summaries
 
-    def generate_summaries(
-        self,
-        text: str,
-        timeout_seconds: int,
-        use_parallel: bool = False,
-    ) -> Dict[str, str]:
+def generate_summaries(self, text: str, use_parallel: bool = None) -> Dict[str, str]:
+    if use_parallel is None:
+        use_parallel = torch.cuda.is_available()  # Auto-detect GPU for parallel execution
         """Generate summaries with CPU/GPU-aware execution mode.
 
         Args:
