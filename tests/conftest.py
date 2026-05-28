@@ -17,6 +17,7 @@ def flask_app():
             "MAX_CONTENT_LENGTH": 2 * 1024 * 1024,
             "MODEL_TIMEOUT_SECONDS": 2,
             "MAX_INPUT_TOKENS": 256,
+            "DB_PATH": "app/db/test_cache.db",
         }
     )
     return app
