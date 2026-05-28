@@ -14,6 +14,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from app.config import Config
 from app.exceptions import SummaryTimeoutError
 from app.routes.api import api_bp
+from app.routes.api_v2 import api_v2_bp
 
 
 def _configure_logging(log_level: str) -> None:
@@ -39,6 +40,7 @@ def create_app() -> Flask:
     CORS(app)
     _configure_logging(app.config["LOG_LEVEL"])
     app.register_blueprint(api_bp)
+    app.register_blueprint(api_v2_bp)
 
     @app.errorhandler(RequestEntityTooLarge)
     def handle_large_file(_: RequestEntityTooLarge) -> Response:
@@ -52,7 +54,7 @@ def create_app() -> Flask:
     @app.errorhandler(SummaryTimeoutError)
     def handle_timeout(error: SummaryTimeoutError) -> Response:
         """Return timeout response for summarization time budget failures."""
-        response: Dict[str, str] = {"error": str(error)}
+        response: Dict[str, str] = {"error": str(error), "code": "TIMEOUT"}
         return jsonify(response), HTTPStatus.GATEWAY_TIMEOUT
 
     @app.errorhandler(ValueError)
