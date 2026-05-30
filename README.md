@@ -96,6 +96,15 @@ Health check:
 curl http://localhost:5000/api/health
 ```
 
+## Phase 3 Setup (Optional)
+
+Install the extended NLP dependencies and spaCy model used for analytics and embeddings:
+
+```bash
+pip install -r requirements-phase3.txt
+python -m spacy download en_core_web_sm
+```
+
 ## Frontend Quickstart
 
 1. Install dependencies:
