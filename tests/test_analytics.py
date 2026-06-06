@@ -95,3 +95,21 @@ def test_v2_cache_clear_endpoint(client, monkeypatch, tmp_path: Path) -> None:
     clear_all = client.post("/api/v2/cache/clear", json={})
     assert clear_all.status_code == 200
     assert clear_all.get_json()["cleared"] >= 0
+
+
+def test_v2_advanced_analytics_endpoint_structure(client, monkeypatch, tmp_path: Path) -> None:
+    """Advanced analytics endpoint should return Phase 3 aggregate shape."""
+    client.application.config["DB_PATH"] = str(tmp_path / "analytics_advanced.db")
+    monkeypatch.setattr("app.routes.api_v2.summarizer.generate_summaries", _mock_generate_summaries)
+    monkeypatch.setattr("app.routes.api_v2.evaluator.evaluate_summaries", _mock_evaluate_summaries)
+
+    data = {"file": (io.BytesIO(b"according to sources confirmed government official"), "news.txt")}
+    summarize_response = client.post("/api/v2/summarize", data=data, content_type="multipart/form-data")
+    assert summarize_response.status_code == 200
+
+    response = client.get("/api/v2/analytics/advanced")
+    assert response.status_code == 200
+    body = response.get_json()
+    assert "advanced_metrics_avg" in body
+    assert "classifier_accuracy" in body
+    assert {"bart", "pegasus", "t5"}.issubset(body["advanced_metrics_avg"].keys())
