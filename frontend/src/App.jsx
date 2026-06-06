@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import SummaryComparison from "./components/SummaryComparison";
+import AdvancedMetricsDashboard from "./pages/AdvancedMetricsDashboard";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
 function App() {
@@ -23,11 +24,18 @@ function App() {
           >
             Analytics
           </NavLink>
+          <NavLink
+            to="/advanced"
+            style={({ isActive }) => ({ color: isActive ? "#005f73" : "#5f6f7a" })}
+          >
+            Advanced Metrics
+          </NavLink>
         </nav>
       </header>
       <Routes>
         <Route path="/" element={<SummaryComparison />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
+        <Route path="/advanced" element={<AdvancedMetricsDashboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
