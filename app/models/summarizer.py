@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -40,8 +41,12 @@ class MultiModelSummarizer:
         Returns:
             Mapping from summary key to HuggingFace model id.
         """
+        bart_model = current_app.config["BART_MODEL_NAME"]
+        finetuned_bart_path = current_app.config.get("FINETUNED_BART_PATH", "")
+        if finetuned_bart_path and os.path.exists(finetuned_bart_path):
+            bart_model = finetuned_bart_path
         return {
-            "summary_bart": current_app.config["BART_MODEL_NAME"],
+            "summary_bart": bart_model,
             "summary_pegasus": current_app.config["PEGASUS_MODEL_NAME"],
             "summary_t5": current_app.config["T5_MODEL_NAME"],
         }

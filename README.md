@@ -6,9 +6,10 @@ Multi-model document summarization platform with a Flask API and a Vite + React 
 
 - Upload PDF or TXT files and auto-detect document type when not provided.
 - Generate three summaries and return a recommended summary from the routed model.
-- ROUGE-1/2/L evaluation plus custom metrics (word count and compression ratio).
+- ROUGE-1/2/L evaluation plus custom and advanced metrics.
 - Cache summaries and track analytics (latency, model usage, doc types) via API v2.
-- React UI with drag-and-drop upload, side-by-side comparisons, and analytics dashboard.
+- TF-IDF document classification, citation extraction for research papers, and advanced analytics.
+- React UI with drag-and-drop upload, side-by-side comparisons, analytics, and advanced metrics dashboards.
 
 ## Project Structure
 
@@ -21,9 +22,12 @@ ModelCompass/
 │   ├── main.py
 │   ├── db/
 │   │   ├── __init__.py
+│   │   ├── migration_v2.py
 │   │   └── schema.py
 │   ├── models/
 │   │   ├── __init__.py
+│   │   ├── advanced_evaluator.py
+│   │   ├── classifier.py
 │   │   ├── evaluator.py
 │   │   └── summarizer.py
 │   ├── routes/
@@ -33,6 +37,7 @@ ModelCompass/
 │   └── utils/
 │       ├── __init__.py
 │       ├── cache.py
+│       ├── citation_extractor.py
 │       └── text_processor.py
 ├── frontend/
 │   ├── index.html
@@ -45,12 +50,18 @@ ModelCompass/
 │       │   ├── SummaryComparison.css
 │       │   └── SummaryComparison.jsx
 │       └── pages/
+│           ├── AdvancedMetricsDashboard.jsx
 │           └── AnalyticsDashboard.jsx
+├── notebooks/
+│   └── 01_finetune_bart.ipynb
 ├── tests/
 │   ├── conftest.py
 │   ├── test_analytics.py
 │   ├── test_api.py
 │   ├── test_cache.py
+│   ├── test_advanced_evaluator.py
+│   ├── test_citation_extractor.py
+│   ├── test_classifier.py
 │   ├── test_evaluator.py
 │   └── test_summarizer.py
 ├── .env.example
@@ -96,13 +107,18 @@ Health check:
 curl http://localhost:5000/api/health
 ```
 
-## Phase 3 Setup (Optional)
+## Phase 3 Setup
 
-Install the extended NLP dependencies and spaCy model used for analytics and embeddings:
+Phase 3 dependencies are included in `requirements.txt`. Install the spaCy model used for entity preservation and citation extraction:
 
 ```bash
-pip install -r requirements-phase3.txt
 python -m spacy download en_core_web_sm
+```
+
+If you fine-tune BART with `notebooks/01_finetune_bart.ipynb`, point the API at the saved model:
+
+```bash
+FINETUNED_BART_PATH=./models/bart-finetuned
 ```
 
 ## Frontend Quickstart
@@ -149,6 +165,7 @@ Environment variables (see `.env.example`):
 | `MODEL_TIMEOUT_SECONDS` | `60` | Summarization timeout |
 | `MAX_INPUT_TOKENS` | `1024` | Input truncation limit |
 | `BART_MODEL_NAME` | `facebook/bart-large-cnn` | BART model |
+| `FINETUNED_BART_PATH` | empty | Optional local fine-tuned BART path |
 | `PEGASUS_MODEL_NAME` | `google/pegasus-xsum` | Pegasus model |
 | `T5_MODEL_NAME` | `t5-small` | T5 model |
 | `SUMMARY_MAX_LENGTH` | `180` | Summary max length |
@@ -213,8 +230,20 @@ Same form fields as v1. Returns cache and performance metadata:
 {
   "summaries": { "summary_bart": "..." },
   "rouge_scores": { "pairwise_rouge": { "summary_bart_vs_summary_t5": { "rouge1": 0.31 } } },
+  "advanced_metrics": {
+    "summary_bart": {
+      "semantic_similarity": 0.78,
+      "abstractiveness": 0.64,
+      "entity_preservation": 0.82
+    }
+  },
   "metadata": {
     "detected_doc_type": "news",
+    "classifier": {
+      "detected_type": "news",
+      "confidence": 0.87,
+      "method": "tfidf"
+    },
     "routed_model": "bart",
     "was_cached": false,
     "inference_time_ms": 1234.56,
@@ -228,6 +257,10 @@ Same form fields as v1. Returns cache and performance metadata:
 ### `GET /api/v2/analytics`
 
 Returns aggregate analytics, cache hit rate, and recent summaries.
+
+### `GET /api/v2/analytics/advanced`
+
+Returns average semantic similarity, abstractiveness, entity preservation, and classifier method data for advanced charts.
 
 ### `POST /api/v2/cache/clear`
 

@@ -25,6 +25,7 @@ class Config:
     )
 
     BART_MODEL_NAME: str = os.getenv("BART_MODEL_NAME", "facebook/bart-large-cnn")
+    FINETUNED_BART_PATH: str = os.getenv("FINETUNED_BART_PATH", "")
     PEGASUS_MODEL_NAME: str = os.getenv("PEGASUS_MODEL_NAME", "google/pegasus-xsum")
     T5_MODEL_NAME: str = os.getenv("T5_MODEL_NAME", "t5-small")
 

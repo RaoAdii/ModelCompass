@@ -12,6 +12,8 @@ from flask_cors import CORS
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from app.config import Config
+from app.db.migration_v2 import run_migration
+from app.db.schema import init_db
 from app.exceptions import SummaryTimeoutError
 from app.routes.api import api_bp
 from app.routes.api_v2 import api_v2_bp
@@ -39,6 +41,8 @@ def create_app() -> Flask:
     app.config.from_object(Config)
     CORS(app)
     _configure_logging(app.config["LOG_LEVEL"])
+    init_db(app.config["DB_PATH"])
+    run_migration(app.config["DB_PATH"])
     app.register_blueprint(api_bp)
     app.register_blueprint(api_v2_bp)
 

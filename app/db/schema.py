@@ -38,6 +38,14 @@ class AnalyticsLog(Base):
     rouge_1: Mapped[float] = mapped_column(Float, nullable=False)
     inference_time_ms: Mapped[float] = mapped_column(Float, nullable=False)
     was_cached: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    semantic_similarity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    abstractiveness: Mapped[float | None] = mapped_column(Float, nullable=True)
+    entity_preservation: Mapped[float | None] = mapped_column(Float, nullable=True)
+    classifier_method: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="keyword_fallback",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -88,4 +96,3 @@ def init_db(db_path: str = "app/db/cache.db") -> None:
     """
     engine = create_db_engine(db_path=db_path)
     Base.metadata.create_all(engine)
-
